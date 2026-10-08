@@ -4,16 +4,37 @@ use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Slim\Factory\AppFactory;
 use OpenApi\Attributes as OAT; 
+use ReallySimpleJWT\Token;
 
 require __DIR__ . "/../vendor/autoload.php";
 require __DIR__ . "/api/api-main.php"; 
 
 $app = AppFactory::create();
 
+$config = json_decode(file_get_contents(__DIR__ . "/../config.json"), true);
+
+
 $app->setBasePath("/api/v1");
 
 $app->addBodyParsingMiddleware();
 
 $app->get("/", [ApiMain::class, "index"]);
+$app->get("/categories", [ApiMain::class, "getCategories"]);
+$app->get("/category/{id}", [ApiMain::class, "getCategoryById"]);
+$app->get("/products", [ApiMain::class, "getProducts"]);
+$app->get("/product/{id}", [ApiMain::class, "getProductById"]);
+$app->post("/category", [ApiMain::class, "createCategory"]);
+
+
+
+$app->post("/authenticate", function (Request $request, Response $response) {
+    global $config;
+    $requestBody = $request->getParsedBody();
+
+    if ($requestBody["username"] != $config["username"] || $requestBody["password"] != $config["password"]) {
+    
+    }
+});
+
 
 $app->run();

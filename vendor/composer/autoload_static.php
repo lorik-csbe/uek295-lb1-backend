@@ -35,6 +35,7 @@ class ComposerStaticInit026509606a55be5c56c243e48adc6597
         ),
         'R' =>
         array (
+            'ReallySimpleJWT\\' => 16,
             'Radebatz\\TypeInfoExtras\\' => 24,
         ),
         'P' =>
@@ -105,6 +106,10 @@ class ComposerStaticInit026509606a55be5c56c243e48adc6597
         'Slim\\' =>
         array (
             0 => __DIR__ . '/..' . '/slim/slim/Slim',
+        ),
+        'ReallySimpleJWT\\' =>
+        array (
+            0 => __DIR__ . '/..' . '/rbdwllr/reallysimplejwt/src',
         ),
         'Radebatz\\TypeInfoExtras\\' =>
         array (
