@@ -27,6 +27,7 @@ $app->get("/products", [ApiMain::class, "getProducts"]);
 $app->get("/product/{id}", [ApiMain::class, "getProductById"]);
 $app->delete("/product/{id}", [ApiMain::class,"deleteProduct"]);
 $app->post("/category", [ApiMain::class, "createCategory"]);
+$app->put("/product", [ApiMain::class, "createProduct"]);
 
 
 
@@ -35,8 +36,14 @@ $app->post("/authenticate", function (Request $request, Response $response) {
     $requestBody = $request->getParsedBody();
 
     if ($requestBody["username"] != $config["username"] || $requestBody["password"] != $config["password"]) {
-    
+        return $response->withStatus(401, "Invalid credentials");    
     }
+
+    $token = Token::create($config["username"], $config["password"], time() + 3600, "localhost");
+
+    setcookie("token", $token, time() + 3600);
+    return $response->withStatus("204");
+
 });
 
 

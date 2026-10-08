@@ -64,6 +64,50 @@ class ApiMain {
         return $response->withHeader('Content-Type', 'application/json') ->withStatus(200);
     }
 
+    public static function updateCreateProduct(Request $request, Response $response, $args) {
+        $database = new mysqli("localhost:3307", "root", "", "uek295_lb1");
+
+        $body = $request->getParsedBody();
+        $active = $body["active"];
+        $id_category = $body["id_category"];
+        $name = $body["name"];
+        $image = $body["image"];
+        $description = $body["description"];
+        $price = $body["price"];
+        $stock = $body["stock"];
+
+        
+        if ($name == '' || $active == '' || $price == '' || $stock == '') {
+            return $response->withStatus(400, "Bad Request: Missing required fields");
+
+        }
+        
+        $statement = $database->prepare("INSERT INTO product (active, id_category, name, image, description, price, stock) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+        $statement->bind_param("iisssii", $active, $id_category, $name, $image, $description, $price, $stock);
+
+        $result = $statement->execute();
+
+        $createdProduct = [
+            "active"=> $active,
+            "id_category"=> $id_category,
+            "name"=> $name,
+            "image"=> $image,
+            "description"=> $description,
+            "price"=> $price,
+            "stock"=> $stock
+
+        ];
+
+    
+
+        $response->getBody()->write(json_encode($createdProduct));
+        return $response->withHeader('Content-Type', 'application/json') ->withStatus(201);
+
+
+
+        
+    }
+
     public static function getCategories(Request $request, Response $response, $args) {
         $database = new mysqli("localhost:3307", "root", "", "uek295_lb1");
 
