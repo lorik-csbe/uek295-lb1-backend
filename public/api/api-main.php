@@ -2,22 +2,6 @@
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 class ApiMain {
-
-    public static function getCategories(Request $request, Response $response, $args) {
-        $database = new mysqli("localhost:3307", "root", "", "uek295_lb1");
-
-        $statement = $database->prepare("SELECT category_id, active, name FROM category");
-        $result = $statement->execute();
-        $result = $statement->get_result();
-
-        $categories = $result->fetch_all(MYSQLI_ASSOC);
-
-
-        $response->getBody()->write(json_encode($categories));
-        return $response->withHeader('Content-Type', 'application/json') ->withStatus(200);   
-
-    }
-
     public static function getProducts(Request $request, Response $response, $args) {
         $database = new mysqli("localhost:3307", "root", "", "uek295_lb1");
 
@@ -55,6 +39,47 @@ class ApiMain {
         return $response->withHeader('Content-Type', 'application/json') ->withStatus(200); 
 
     }
+
+    public static function deleteProduct(Request $request, Response $response, $args) {
+        $database = new mysqli("localhost:3307", "root", "", "uek295_lb1");
+
+        $id = $args["id"];
+
+        $statement = $database->prepare("DELETE FROM product WHERE product_id = ?");
+        $statement->bind_param("i", $id);
+
+
+        $result = $statement->execute();
+
+        $deletedProduct = [
+            "product_id"=> $id
+        ];
+
+        if ($statement->affected_rows === 0) {
+            $response->getBody()->write(json_encode(["error" => "Product not found"]));
+            return $response->withHeader('Content-Type', 'application/json')->withStatus(404);
+        }
+
+        $response->getBody()->write(json_encode($deletedProduct));
+        return $response->withHeader('Content-Type', 'application/json') ->withStatus(200);
+    }
+
+    public static function getCategories(Request $request, Response $response, $args) {
+        $database = new mysqli("localhost:3307", "root", "", "uek295_lb1");
+
+        $statement = $database->prepare("SELECT category_id, active, name FROM category");
+        $result = $statement->execute();
+        $result = $statement->get_result();
+
+        $categories = $result->fetch_all(MYSQLI_ASSOC);
+
+
+        $response->getBody()->write(json_encode($categories));
+        return $response->withHeader('Content-Type', 'application/json') ->withStatus(200);   
+
+    }
+
+
     public static function getCategoryById(Request $request, Response $response, $args) {
         $database = new mysqli("localhost:3307", "root", "", "uek295_lb1");
 
@@ -84,22 +109,83 @@ class ApiMain {
         $database = new mysqli("localhost:3307", "root", "", "uek295_lb1");
 
         $body = $request->getParsedBody();
-        $statement = $database->prepare("INSERT INTO category (active, name) VALUES (?, ?)");
-
-        $result = $statement->execute();
-        $result = $statement->get_result();
-        
         $name = $body["name"];
         $active = $body["active"];
-
-
-
-        $response->getBody()->write(json_encode($result));
-        return $response->withHeader('Content-Type', 'application/json') ->withStatus(201);
-
+        
         if ($name == '' || $active == '') {
             return $response->withStatus(400, "Bad Request: Missing required fields");
+
         }
+        
+        $statement = $database->prepare("INSERT INTO category (active, name) VALUES (?, ?)");
+        $statement->bind_param("is", $active, $name);
+
+        $result = $statement->execute();
+
+        $createdCategory = [
+            "active"=> $active,
+            "name"=> $name
+        ];
+
+    
+
+        $response->getBody()->write(json_encode($createdCategory));
+        return $response->withHeader('Content-Type', 'application/json') ->withStatus(201);
+
+    }
+
+    public static function updateCategory(Request $request, Response $response, $args) {
+        $database = new mysqli("localhost:3307", "root", "", "uek295_lb1");
+
+        $body = $request->getParsedBody();
+        $name = $body["name"];
+        $active = $body["active"];
+        
+        if ($name == '' || $active == '') {
+            return $response->withStatus(400, "Bad Request: Missing required fields");
+
+        }
+        
+        $statement = $database->prepare("UPDATE category SET active = ?, name = ? WHERE category_id = ?");
+        $statement->bind_param("isi", $active, $name, $args["id"]);
+
+        $result = $statement->execute();
+
+        $createdCategory = [
+            "active"=> $active,
+            "name"=> $name
+        ];
+
+    
+
+        $response->getBody()->write(json_encode($createdCategory));
+        return $response->withHeader('Content-Type', 'application/json') ->withStatus(201);
+
+
+    }
+
+    public static function deleteCategory(Request $request, Response $response, $args) {
+        $database = new mysqli("localhost:3307", "root", "", "uek295_lb1");
+
+        $id = $args["id"];
+
+        $statement = $database->prepare("DELETE FROM category WHERE category_id = ?");
+        $statement->bind_param("i", $id);
+
+
+        $result = $statement->execute();
+
+        $deletedCategory = [
+            "category_id"=> $id
+        ];
+
+        if ($statement->affected_rows === 0) {
+            $response->getBody()->write(json_encode(["error" => "Category not found"]));
+            return $response->withHeader('Content-Type', 'application/json')->withStatus(404);
+        }
+
+        $response->getBody()->write(json_encode($deletedCategory));
+        return $response->withHeader('Content-Type', 'application/json') ->withStatus(200);
 
     }
 

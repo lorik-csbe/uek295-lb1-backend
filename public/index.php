@@ -21,8 +21,11 @@ $app->addBodyParsingMiddleware();
 $app->get("/", [ApiMain::class, "index"]);
 $app->get("/categories", [ApiMain::class, "getCategories"]);
 $app->get("/category/{id}", [ApiMain::class, "getCategoryById"]);
+$app->patch("/category/{id}", [ApiMain::class, "updateCategory"]);
+$app->delete("/category/{id}", [ApiMain::class,"deleteCategory"]);
 $app->get("/products", [ApiMain::class, "getProducts"]);
 $app->get("/product/{id}", [ApiMain::class, "getProductById"]);
+$app->delete("/product/{id}", [ApiMain::class,"deleteProduct"]);
 $app->post("/category", [ApiMain::class, "createCategory"]);
 
 
