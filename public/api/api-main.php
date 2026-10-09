@@ -1,6 +1,8 @@
 <?php
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
+use ReallySimpleJWT\Token;
+
 
 use OpenApi\Attributes as OAT; 
 
@@ -10,6 +12,27 @@ use OpenApi\Attributes as OAT;
 )]
 
 class ApiMain {
+
+
+    /**
+     *  isRequestAuthenticated-function
+     */
+    public static function isRequestAuthenticated(Request $request, Response $response) {
+        // Check if the token is present in the cookies
+        if (!isset($_COOKIE['token'])) {
+            // Token is missing, return an error response
+            $request_date = [
+                "success" => false,
+                "message" => "Token is missing"
+            ];
+            $response->getBody()->write(json_encode($request_date));
+            return $response->withHeader('Content-Type', 'application/json')->withStatus(401);
+        }
+
+        return null;
+    }
+
+    
 
     /**
      *  getProducts-function
@@ -24,6 +47,14 @@ class ApiMain {
         ]
     )]
     public static function getProducts(Request $request, Response $response, $args) {
+
+        // Check if the request is authenticated
+        $authResponse = self::isRequestAuthenticated($request, $response);
+        // If the request is not authenticated, return the error response
+        if ($authResponse !== null) {
+            return $authResponse;
+        }
+
         $database = new mysqli("localhost:3307", "root", "", "uek295_lb1");
 
 
@@ -34,9 +65,9 @@ class ApiMain {
 
         $products = $result->fetch_all(MYSQLI_ASSOC);
 
-        if ($result->affected_rows === 0) {
+        if (empty($products)) {
             $response->getBody()->write(json_encode(["error" => "No products found"]));
-            return $response->withHeader('Content-Type', 'application/json')->withStatus(404);
+            return $response->withHeader('Content-Type', 'application/json')->withStatus(204); // Return 204 with an empty array if no products are found
         }
 
         // Return the products as a JSON response
@@ -61,6 +92,11 @@ class ApiMain {
     )]
 
     public static function getProductById(Request $request, Response $response, $args) {
+        $authResponse = self::isRequestAuthenticated($request, $response);
+        if ($authResponse !== null) {
+            return $authResponse;
+        }
+
         $database = new mysqli("localhost:3307", "root", "", "uek295_lb1");
         // Get the product ID from the route parameters
         $id = $args["id"];
@@ -97,6 +133,11 @@ class ApiMain {
         ]
     )]
     public static function deleteProduct(Request $request, Response $response, $args) {
+        $authResponse = self::isRequestAuthenticated($request, $response);
+        if ($authResponse !== null) {
+            return $authResponse;
+        }
+
         $database = new mysqli("localhost:3307", "root", "", "uek295_lb1");
         // Get the product ID from the route parameters
         $id = $args["id"];
@@ -113,7 +154,7 @@ class ApiMain {
         ];
 
         // Check if the product was found and deleted
-        if ($statement->affected_rows === 0) {
+        if (empty($deletedProduct)) {
             $response->getBody()->write(json_encode(["error" => "Product not found"]));
             return $response->withHeader('Content-Type', 'application/json')->withStatus(404);
         }
@@ -137,6 +178,11 @@ class ApiMain {
         ]
     )]
     public static function createProduct(Request $request, Response $response, $args) {
+        $authResponse = self::isRequestAuthenticated($request, $response);
+        if ($authResponse !== null) {
+            return $authResponse;
+        }
+
         $database = new mysqli("localhost:3307", "root", "", "uek295_lb1");
 
         // Get the request body data
@@ -158,7 +204,7 @@ class ApiMain {
         
         // Prepare and execute the SQL query to insert a new product
         $statement = $database->prepare("INSERT INTO product (sku, active, id_category, name, image, description, price, stock) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
-        $statement->bind_param("iiisssii", $sku,$active, $id_category, $name, $image, $description, $price, $stock);
+        $statement->bind_param("siisssii", $sku,$active, $id_category, $name, $image, $description, $price, $stock);
 
         $result = $statement->execute();
 
@@ -201,6 +247,11 @@ class ApiMain {
     )]
         
     public static function getCategories(Request $request, Response $response, $args) {
+        $authResponse = self::isRequestAuthenticated($request, $response);
+        if ($authResponse !== null) {
+            return $authResponse;
+        }
+
         $database = new mysqli("localhost:3307", "root", "", "uek295_lb1");
 
         // Prepare and execute the SQL query to fetch all categories
@@ -210,7 +261,7 @@ class ApiMain {
 
         $categories = $result->fetch_all(MYSQLI_ASSOC);
 
-        if ($result->affected_rows === 0) {
+        if (empty($categories)) {
             $response->getBody()->write(json_encode(["error" => "No categories found"]));
             return $response->withHeader('Content-Type', 'application/json')->withStatus(404);
         }
@@ -234,6 +285,11 @@ class ApiMain {
         ]
     )]
     public static function getCategoryById(Request $request, Response $response, $args) {
+        $authResponse = self::isRequestAuthenticated($request, $response);
+        if ($authResponse !== null) {
+            return $authResponse;
+        }
+
         $database = new mysqli("localhost:3307", "root", "", "uek295_lb1");
 
         // Get the category ID from the route parameters
@@ -272,28 +328,35 @@ class ApiMain {
         ]
     )]
     public static function createCategory(Request $request, Response $response, $args) {
+        $authResponse = self::isRequestAuthenticated($request, $response);
+        if ($authResponse !== null) {
+            return $authResponse;
+        }
+
         $database = new mysqli("localhost:3307", "root", "", "uek295_lb1");
         // Get the request body data
         $body = $request->getParsedBody();
+        $id = $body["category_id"];
         $name = $body["name"];
         $active = $body["active"];
         
         // Validate required fields
-        if ($name == '' || $active == '') {
+        if (empty($name) || empty($active)) {
             return $response->withStatus(400, "Bad Request: Missing required fields");
 
         }
         
         // Prepare and execute the SQL query to insert a new category
-        $statement = $database->prepare("INSERT INTO category (active, name) VALUES (?, ?)");
-        $statement->bind_param("is", $active, $name);
+        $statement = $database->prepare("INSERT INTO category (category_id, active, name) VALUES (?, ?, ?)");
+        $statement->bind_param("iis", $id, $active, $name);
 
         $result = $statement->execute();
 
         // Prepare the response data for the created category
         $createdCategory = [
-            "active"=> $active,
-            "name"=> $name
+            "category_id" => $id,
+            "active" => $active,
+            "name" => $name
         ];
 
     
@@ -316,6 +379,11 @@ class ApiMain {
         ]
     )]
     public static function updateCategory(Request $request, Response $response, $args) {
+        $authResponse = self::isRequestAuthenticated($request, $response);
+        if ($authResponse !== null) {
+            return $authResponse;
+        }
+
         $database = new mysqli("localhost:3307", "root", "", "uek295_lb1");
 
         // Get the request body data
@@ -325,8 +393,7 @@ class ApiMain {
         $active = $body["active"];
 
         // Validate required fields
-        
-        if ($name == '' || $active == '' || $id == '') {
+        if (empty($name) || empty($active) || empty($id)) {
             return $response->withStatus(400, "Bad Request: Missing required fields");
 
         }
@@ -339,7 +406,7 @@ class ApiMain {
 
         // Prepare the response data for the updated category
         $createdCategory = [
-            "id"=> $id,
+            "category_id" => $id,
             "active"=> $active,
             "name"=> $name
         ];
@@ -366,6 +433,11 @@ class ApiMain {
         ]
     )]
     public static function deleteCategory(Request $request, Response $response, $args) {
+        $authResponse = self::isRequestAuthenticated($request, $response);
+        if ($authResponse !== null) {
+            return $authResponse;
+        }
+
         $database = new mysqli("localhost:3307", "root", "", "uek295_lb1");
         // Get the category ID from the route parameters
         $id = $args["id"];
@@ -381,7 +453,7 @@ class ApiMain {
         ];
 
         // Check if the category was found and deleted
-        if ($statement->affected_rows === 0) {
+        if (empty($deletedCategory)) {
             $response->getBody()->write(json_encode(["error" => "Category not found"]));
             return $response->withHeader('Content-Type', 'application/json')->withStatus(404);
         }

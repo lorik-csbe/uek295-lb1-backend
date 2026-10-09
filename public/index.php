@@ -47,16 +47,22 @@ $app->post("/authenticate", function (Request $request, Response $response) {
         return $response->withStatus(401, "Invalid credentials");    
     }
     // Create a JWT token
-    $token = Token::create($config["username"], $config["password"], time() + 3600, "localhost");
+    $tokenstring = Token::create($config["username"], $config["password"], time() + 3600, "localhost");
 
-    // Set the token as a cookie and return a 201 status code
-    $result = setcookie("token", $token, time() + 3600);
-    return $response->withStatus("201");
+    // Set the token as a cookie
+    setcookie("token", $tokenstring, time() + 3600);
 
-    
+    // Prepare the response data
+    $token = [
+        "success" => true,
+        "username" => $config["username"],
+        "token" => $tokenstring
+    ];
+
+    // Return the token in the response
     $response->withHeader('Content-Type', 'application/json');
-    $response->getBody()->write(json_encode([$result]));
-    return $response->withStatus(201);
+    $response->getBody()->write(json_encode([$token]));
+    return $response->withStatus(200);
 });
 
 
