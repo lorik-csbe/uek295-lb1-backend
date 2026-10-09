@@ -16,7 +16,7 @@ class ApiMain {
      */
 
     #[OAT\Get(
-        path: '/product',
+        path: '/products',
         summary: 'Alle Produkte auflisten',
         tags: ['Product'],
         responses: [
@@ -33,6 +33,11 @@ class ApiMain {
         $result = $statement->get_result();
 
         $products = $result->fetch_all(MYSQLI_ASSOC);
+
+        if ($result->affected_rows === 0) {
+            $response->getBody()->write(json_encode(["error" => "No products found"]));
+            return $response->withHeader('Content-Type', 'application/json')->withStatus(404);
+        }
 
         // Return the products as a JSON response
         $response->getBody()->write(json_encode($products));
@@ -186,13 +191,15 @@ class ApiMain {
      */
 
     #[OAT\Get(
-        path: '/category',
+        path: '/categories',
         summary: 'Alle Kategorien auflisten',
         tags: ['Category'],
         responses: [
-            new OAT\Response(response: 200, description: 'Liste aller Kategorien erfolgreich geliefert')
+            new OAT\Response(response: 200, description: 'Liste aller Kategorien erfolgreich geliefert'),
+            new OAT\Response(response: 404, description: 'Keine Kategorien gefunden')
         ]
     )]
+        
     public static function getCategories(Request $request, Response $response, $args) {
         $database = new mysqli("localhost:3307", "root", "", "uek295_lb1");
 
@@ -202,6 +209,11 @@ class ApiMain {
         $result = $statement->get_result();
 
         $categories = $result->fetch_all(MYSQLI_ASSOC);
+
+        if ($result->affected_rows === 0) {
+            $response->getBody()->write(json_encode(["error" => "No categories found"]));
+            return $response->withHeader('Content-Type', 'application/json')->withStatus(404);
+        }
 
         // Return the categories as a JSON response
         $response->getBody()->write(json_encode($categories));
@@ -294,7 +306,7 @@ class ApiMain {
     /**
      *  updateCategory-function
      */
-    #[OAT\Put(
+    #[OAT\Patch(
         path: '/category/{id}',
         summary: 'Kategorie aktualisieren',
         tags: ['Category'],
@@ -308,12 +320,13 @@ class ApiMain {
 
         // Get the request body data
         $body = $request->getParsedBody();
+        $id = $args["id"];
         $name = $body["name"];
         $active = $body["active"];
 
         // Validate required fields
         
-        if ($name == '' || $active == '') {
+        if ($name == '' || $active == '' || $id == '') {
             return $response->withStatus(400, "Bad Request: Missing required fields");
 
         }
@@ -326,6 +339,7 @@ class ApiMain {
 
         // Prepare the response data for the updated category
         $createdCategory = [
+            "id"=> $id,
             "active"=> $active,
             "name"=> $name
         ];

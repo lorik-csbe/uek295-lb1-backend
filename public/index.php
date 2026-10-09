@@ -34,6 +34,7 @@ $app->post("/category", [ApiMain::class, "createCategory"]);
 $app->post("/product", [ApiMain::class, "createProduct"]); // PUT was not working, so I changed it to POST.
 
 
+
 // Define the authentication route
 $app->post("/authenticate", function (Request $request, Response $response) {
     // Access the global configuration.
